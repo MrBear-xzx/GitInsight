@@ -1,0 +1,79 @@
+﻿services:
+  postgres:
+    image: postgres:16
+    container_name: gitinsight-postgres
+    environment:
+      POSTGRES_DB: gitinsight
+      POSTGRES_USER: gitinsight
+      POSTGRES_PASSWORD: gitinsight
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gitinsight"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: gitinsight-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: gitinsight-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://gitinsight:gitinsight@postgres:5432/gitinsight
+      REDIS_URL: redis://redis:6379
+      ANALYSIS_JOB_STORE: memory
+      ANALYSIS_JOB_DISPATCH_MODE: queue
+      ANALYSIS_JOB_QUEUE_EXECUTION_MODE: inprocess
+    ports:
+      - "3000:3000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: gitinsight-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://gitinsight:gitinsight@postgres:5432/gitinsight
+      REDIS_URL: redis://redis:6379
+      ANALYSIS_JOB_STORE: memory
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: gitinsight-web
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:3000
+    ports:
+      - "3001:3001"
+
+volumes:
+  pgdata:

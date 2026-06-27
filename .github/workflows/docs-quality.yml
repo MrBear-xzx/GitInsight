@@ -1,0 +1,46 @@
+name: Docs Quality
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**/*.md"
+      - ".github/workflows/docs-quality.yml"
+      - "scripts/check-local-links.ps1"
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.md"
+      - ".github/workflows/docs-quality.yml"
+      - "scripts/check-local-links.ps1"
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          globs: |
+            **/*.md
+
+  local-link-check:
+    name: Local Link Check
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check markdown local links
+        shell: pwsh
+        run: |
+          ./scripts/check-local-links.ps1 -RootPath .
