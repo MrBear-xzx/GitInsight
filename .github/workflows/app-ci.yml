@@ -87,6 +87,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
       - name: Start API server
+        env:
+          ANALYSIS_JOB_AUTOPROCESS: false
         run: |
           pnpm --filter @gitinsight/api start > /tmp/api.log 2>&1 &
           sleep 15
