@@ -1,10 +1,11 @@
 ﻿import { runFullAnalysis, metricsToSummary } from "../orchestrators/analysis-orchestrator.service";
+import type { AnalysisJobStatus } from "../../../api/src/modules/analysis-jobs/analysis-job-status";
 
 // ── Port types ─────────────────────────────────────────
 
 type AnalysisJobStatusInput = {
   job_id: string;
-  status: string;
+  status: AnalysisJobStatus;
   progress?: number;
   metrics_summary?: Record<string, unknown>;
   error_code?: string | null;
