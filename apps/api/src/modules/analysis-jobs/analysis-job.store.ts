@@ -3,6 +3,9 @@
 // Re-export for consumers that import from analysis-job.store
 export type { AnalysisJobStatus };
 
+export const ANALYSIS_JOB_STORE_TOKEN = "ANALYSIS_JOB_STORE";
+export const ANALYSIS_JOB_DISPATCHER_TOKEN = "ANALYSIS_JOB_DISPATCHER";
+
 export type AnalysisJobRecord = {
   job_id: string;
   repo_url: string;

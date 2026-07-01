@@ -7,8 +7,6 @@
     "start": "tsx src/main.ts"
   },
   "dependencies": {
-    "bullmq": "^5.79.1",
-    "ioredis": "^5.11.1"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

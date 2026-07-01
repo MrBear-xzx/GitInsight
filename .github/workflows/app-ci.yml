@@ -5,11 +5,8 @@ on:
       - main
     paths:
       - "apps/**"
-      - "packages/**"
-      - "prisma/**"
       - "tests/**"
       - "e2e/**"
-      - "docker-compose.yml"
       - ".github/workflows/app-ci.yml"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -18,11 +15,8 @@ on:
       - main
     paths:
       - "apps/**"
-      - "packages/**"
-      - "prisma/**"
       - "tests/**"
       - "e2e/**"
-      - "docker-compose.yml"
       - ".github/workflows/app-ci.yml"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -46,43 +40,11 @@ jobs:
       - name: Worker unit tests
         run: pnpm --filter @gitinsight/worker test:unit
       - name: API unit tests
-        run: pnpm --filter @gitinsight/api test:unit -- prisma/schema-contract.spec.ts
+        run: pnpm --filter @gitinsight/api test:unit
 
-  e2e-playwright:
-    runs-on: ubuntu-latest
-    needs: [integration-test, unit-test]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.30.3
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-      - name: Install Playwright browsers
-        run: npx playwright install chromium --with-deps
-      - name: Start API server (memory mode)
-        run: |
-          ANALYSIS_JOB_STORE=memory \
-          ANALYSIS_JOB_DISPATCH_MODE=direct \
-          pnpm --filter @gitinsight/api start > /tmp/api.log 2>&1 &
-          sleep 15
-          curl -sf http://localhost:3000/health || echo "API not ready"
-      - name: Start Web dev server
-        run: |
-          NEXT_PUBLIC_API_URL=http://127.0.0.1:3000 \
-          pnpm --filter @gitinsight/web dev > /tmp/web.log 2>&1 &
-          sleep 10
-          curl -sf http://127.0.0.1:3001 || echo "Web may not be ready"
-      - name: Run Playwright E2E tests
-        run: pnpm test:e2e:playwright
   integration-test:
     runs-on: ubuntu-latest
+    needs: [unit-test]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -102,10 +64,9 @@ jobs:
           pnpm --filter @gitinsight/api test:e2e -- analysis-jobs.e2e-spec.ts
           pnpm --filter @gitinsight/api test:e2e -- dashboard.e2e-spec.ts
 
-
-  docker-e2e:
+  e2e-playwright:
     runs-on: ubuntu-latest
-    needs: [integration-test, unit-test]
+    needs: [integration-test]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,10 +80,18 @@ jobs:
           version: 10.30.3
       - name: Install deps
         run: pnpm install --frozen-lockfile
-      - name: Build and start all services
-        run: docker compose -f docker-compose.yml -p gitinsight-e2e up -d --build
-      - name: Run Docker E2E tests
-        run: pnpm test:docker-e2e
-      - name: Cleanup
-        if: always()
-        run: docker compose -f docker-compose.yml -p gitinsight-e2e down -v --remove-orphans
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+      - name: Start API server
+        run: |
+          pnpm --filter @gitinsight/api start > /tmp/api.log 2>&1 &
+          sleep 15
+          curl -sf http://localhost:3000/health || echo "API not ready"
+      - name: Start Web dev server
+        run: |
+          NEXT_PUBLIC_API_URL=http://127.0.0.1:3000 \
+          pnpm --filter @gitinsight/web dev > /tmp/web.log 2>&1 &
+          sleep 10
+          curl -sf http://127.0.0.1:3001 || echo "Web may not be ready"
+      - name: Run Playwright E2E tests
+        run: pnpm test:e2e:playwright

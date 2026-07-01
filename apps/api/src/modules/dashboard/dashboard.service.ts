@@ -1,6 +1,6 @@
 ﻿import { Inject, Injectable } from "@nestjs/common";
 import { AnalysisJobStore } from "../analysis-jobs/analysis-job.store";
-import { ANALYSIS_JOB_STORE_TOKEN } from "../analysis-jobs/analysis-job-store.provider";
+import { ANALYSIS_JOB_STORE_TOKEN } from "../analysis-jobs/analysis-job.store";
 
 const FALLBACK_METRICS = [
   {

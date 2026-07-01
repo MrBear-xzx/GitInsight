@@ -2,7 +2,7 @@
 import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
-import { ANALYSIS_JOB_STORE_TOKEN } from "../src/modules/analysis-jobs/analysis-job-store.provider";
+import { ANALYSIS_JOB_STORE_TOKEN } from "../src/modules/analysis-jobs/analysis-job.store";
 import { AnalysisJobStore } from "../src/modules/analysis-jobs/analysis-job.store";
 
 describe("Dashboard E2E", () => {
