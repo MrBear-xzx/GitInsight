@@ -45,7 +45,7 @@ apps/
 
 ### 数据流
 
-```
+```text
 用户 POST /api/v1/analysis-jobs → 任务创建 (status: PENDING)
   → API 进程内同步执行
     → git clone（浅克隆）
@@ -58,7 +58,7 @@ apps/
 
 ### 作业状态机
 
-```
+```text
 PENDING → RUNNING_QUICK → QUICK_DONE → RUNNING_DEEP → SUCCEEDED
                                                     → FAILED_RETRYABLE
                                                     → FAILED_FINAL
