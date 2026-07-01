@@ -10,14 +10,14 @@ V1 核心链路已打通：仓库输入 → 克隆 → 日志解析 → 9 项指
 
 ```text
 apps/
-├── api/          # NestJS REST API（任务管理 + Dashboard）
-├── worker/       # BullMQ Worker（克隆 + 解析 + 指标计算）
-└── web/          # Next.js 前端（任务创建 + 看板）
+├── api/     # NestJS REST API（任务管理 + Dashboard + 内联分析执行）
+├── worker/  # 分析逻辑库（git 克隆、日志解析、指标计算，由 API 直接调用）
+└── web/     # Next.js 前端（任务创建 + 看板）
 ```
 
-## 快速开始
+Worker 不再作为独立进程运行，分析工作统一在 API 进程内同步执行。
 
-### 本地开发
+## 快速开始
 
 ```bash
 # 安装依赖
@@ -26,34 +26,27 @@ pnpm install
 # 启动 API（端口 3000）
 pnpm --filter @gitinsight/api dev
 
-# 启动 Worker
-pnpm --filter @gitinsight/worker dev
-
 # 启动前端开发服务器（端口 3001）
 pnpm --filter @gitinsight/web dev
 ```
 
-### Docker 一键启动
-
-```bash
-docker compose up -d
-# API: http://localhost:3000
-# Web: http://localhost:3001
-```
+打开 `http://localhost:3001`，输入公开仓库 URL，点击"开始分析"即可。
 
 ## 数据流
 
 ```text
 用户 → 输入仓库 URL
   → POST /api/v1/analysis-jobs → 任务创建
-    → Worker 消费队列
-      → git clone (深度控制)
-      → git log 解析 (--format + --numstat)
+    → API 进程内同步执行
+      → git clone（深度控制）
+      → git log 解析（--format + --numstat）
       → 9 项指标计算
       → metrics_summary 写入
-    → 前端轮询至 SUCCEEDED
+    → 任务完成（SUCCEEDED）
   → GET /api/v1/dashboard → 渲染看板
 ```
+
+状态流转：`PENDING → RUNNING_QUICK → QUICK_DONE → RUNNING_DEEP → SUCCEEDED`
 
 ## 9 项指标
 
@@ -77,19 +70,25 @@ docker compose up -d
 | Worker 单元测试 | `pnpm --filter @gitinsight/worker test:unit` | Worker 模块单元测试 |
 | API 单元测试 | `pnpm --filter @gitinsight/api test:unit` | API 模块单元测试 |
 | API E2E | `pnpm --filter @gitinsight/api test:e2e` | NestJS supertest E2E |
-| Playwright E2E | `pnpm test:e2e:playwright` | API 独立 E2E（需启动 API + Playwright 浏览器） |
+| Playwright E2E | `pnpm test:e2e:playwright` | API + UI E2E（需启动 API 和前端） |
 | 性能基准 | `pnpm benchmark` | 指标计算性能测试 |
 
-## 文档
+## 环境变量
 
-- `docs/superpowers/specs/2026-06-24-gitinsight-v1-design.md` — PRD
-- `docs/superpowers/specs/2026-06-24-gitinsight-v1-spec.md` — SPEC
-- `docs/superpowers/specs/2026-06-24-gitinsight-quality-standard.md` — 质量规范
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `PORT` | 3000 | API 端口 |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:3000` | 前端 API 地址 |
 
 ## CI
 
 已配置 GitHub Actions 流水线：
 - `unit-test` — Worker + API 单元测试
 - `integration-test` — API E2E 测试
-- `e2e-playwright` — Playwright API E2E 测试
-- `docs-quality` — Markdown Lint + 链接检查
+- `e2e-playwright` — Playwright E2E 测试
+
+## 文档
+
+- `docs/superpowers/specs/2026-06-24-gitinsight-v1-design.md` — PRD
+- `docs/superpowers/specs/2026-06-24-gitinsight-v1-spec.md` — SPEC
+- `docs/superpowers/specs/2026-06-24-gitinsight-quality-standard.md` — 质量规范
