@@ -15,14 +15,18 @@ export class AnalysisJobsService {
 
   async create(dto: CreateAnalysisJobDto): Promise<AnalysisJobResponseDto> {
     const created = await this.store.create(dto);
-    // Fire analysis asynchronously — don't block the response
-    this.dispatcher.dispatch(created.job_id, {
-      repo_url: dto.repo_url,
-      time_window: dto.time_window,
-      trigger_type: dto.trigger_type,
-    }).catch((err) => {
-      console.error(`[AnalysisJob] Dispatch failed for ${created.job_id}:`, err instanceof Error ? err.message : err);
-    });
+
+    // Auto-dispatch analysis unless explicitly disabled (e.g. in CI tests)
+    if (process.env.ANALYSIS_JOB_AUTOPROCESS !== "false") {
+      this.dispatcher.dispatch(created.job_id, {
+        repo_url: dto.repo_url,
+        time_window: dto.time_window,
+        trigger_type: dto.trigger_type,
+      }).catch((err) => {
+        console.error(`[AnalysisJob] Dispatch failed for ${created.job_id}:`, err instanceof Error ? err.message : err);
+      });
+    }
+
     return created;
   }
 

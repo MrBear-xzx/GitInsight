@@ -41,6 +41,8 @@ jobs:
         run: pnpm --filter @gitinsight/worker test:unit
       - name: API unit tests
         run: pnpm --filter @gitinsight/api test:unit
+        env:
+          ANALYSIS_JOB_AUTOPROCESS: false
 
   integration-test:
     runs-on: ubuntu-latest
@@ -59,6 +61,8 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
       - name: API e2e tests
+        env:
+          ANALYSIS_JOB_AUTOPROCESS: false
         run: |
           pnpm --filter @gitinsight/api test:e2e -- health.e2e-spec.ts
           pnpm --filter @gitinsight/api test:e2e -- analysis-jobs.e2e-spec.ts
